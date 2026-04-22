@@ -1,21 +1,19 @@
-MIT License
+CUSTOM SOURCE-AVAILABLE LICENSE
 
 Copyright (c) 2026 Wahi-ur-Rehman
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+TERMS AND CONDITIONS:
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+1. INSPIRATION: You are permitted to take "inspiration" from this project for your own portfolio (e.g., UI layout concepts, terminal-style navigation ideas).
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+2. RESTRICTIONS ON COPYING: You are EXPRESSLY PROHIBITED from:
+   - Cloning, downloading, or copying the source code for the purpose of creating a direct derivative work.
+   - Redistributing the source code in its current or modified form.
+   - Hosting a public version of this specific code under your own name.
+
+3. ATTRIBUTION: If you take inspiration from this project, you MUST provide clear and visible credit to the original repository:
+   Main Repository: https://github.com/Wahi-ur-rehman/ai-portfolio
+
+4. NO WARRANTY: The software is provided "as is", without warranty of any kind. In no event shall the author be liable for any claim, damages or other liability.
+
+For any usage outside these terms (e.g., commercial use or full cloning), please contact the author directly.

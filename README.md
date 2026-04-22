@@ -282,7 +282,7 @@ The original base project (`moncy-portfolio`) was a public open-source portfolio
 
 ## 📄 License
 
-MIT License — see [LICENSE](./LICENSE) for details.
+Custom Source-Available License — see [LICENSE](./LICENSE) for details. (Allows inspiration, prohibits cloning/copying without credit).
 
 ---
 
