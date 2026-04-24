@@ -5,17 +5,17 @@ const focusAreas = [
   {
     icon: '🤖',
     title: 'AI & Machine Learning',
-    desc: 'Building intelligent systems with TensorFlow, Scikit-learn, and real-world data pipelines.',
+    desc: 'Engineering autonomous agents and predictive models with architectural precision.',
   },
   {
     icon: '⚡',
-    title: 'Automation',
-    desc: 'End-to-end workflow automation via n8n, API integrations, and task orchestration.',
+    title: 'Scalable Automation',
+    desc: 'Designing enterprise-grade pipelines that eliminate friction and maximize output.',
   },
   {
-    icon: '🎨',
-    title: '3D Visual Design',
-    desc: 'Exploring creative extensions through 3D modeling and interactive visual experiences.',
+    icon: '💠',
+    title: '3D Human-AI Interface',
+    desc: 'Creating immersive visual gateways to represent complex system logic.',
   },
 ];
 
@@ -24,10 +24,10 @@ const OverviewView: React.FC = () => {
 
   return (
     <div className="view-container">
-      <h1 className="view-title">Overview</h1>
+      <h1 className="view-title">System Overview</h1>
 
-      {/* ── Intro card ─────────────────────────────── */}
-      <div className="overview-intro-card">
+      {/* ── Intro card with depth ── */}
+      <div className="overview-intro-card depth-hover">
         <div className="overview-header">
           <img
             src={portfolioData.profileImage}
@@ -46,11 +46,24 @@ const OverviewView: React.FC = () => {
         <p className="bio-paragraph">{introParagraph}</p>
       </div>
 
-      {/* ── Focus areas ────────────────────────────── */}
-      <div className="section-label">Focus Areas</div>
+      {/* ── Metrics Grid ── */}
+      <div className="section-label">Performance Metrics</div>
+      <div className="snapshot-grid">
+        {(portfolioData as any).metrics?.map((m: any, i: number) => (
+          <div key={i} className="snapshot-group depth-hover" style={{ textAlign: 'center' }}>
+            <span className="snapshot-label" style={{ marginBottom: '0.2rem' }}>{m.label}</span>
+            <div style={{ fontSize: '1.8rem', fontWeight: '800', color: 'var(--accent)' }}>
+              {m.value}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* ── Focus areas ── */}
+      <div className="section-label">Core Specializations</div>
       <div className="focus-areas-grid">
         {focusAreas.map((area, i) => (
-          <div key={i} className="focus-card">
+          <div key={i} className="focus-card depth-hover">
             <span className="focus-icon">{area.icon}</span>
             <h3 className="focus-title">{area.title}</h3>
             <p className="focus-desc">{area.desc}</p>
@@ -58,17 +71,17 @@ const OverviewView: React.FC = () => {
         ))}
       </div>
 
-      {/* ── Tech snapshot ──────────────────────────── */}
-      <div className="section-label">Tech Snapshot</div>
+      {/* ── Tech snapshot ── */}
+      <div className="section-label">Technical Proof</div>
       <div className="snapshot-grid">
         {portfolioData.skills.slice(0, 3).map((group, i) => (
-          <div key={i} className="snapshot-group">
+          <div key={i} className="snapshot-group depth-hover">
             <span className="snapshot-label">{group.category}</span>
-            <div className="snapshot-tags">
-              {group.items.slice(0, 4).map((item, j) => (
-                <span key={j} className="skill-tag">{item}</span>
-              ))}
-            </div>
+            <ul style={{ listStyle: 'none', fontSize: '0.8rem', color: 'var(--text-dim)' }}>
+               {group.items.slice(0, 2).map((item, j) => (
+                 <li key={j} style={{ marginBottom: '0.4rem' }}>• {item}</li>
+               ))}
+            </ul>
           </div>
         ))}
       </div>

@@ -16,24 +16,46 @@ interface TerminalPanelProps {
   setActiveSection: (section: Section) => void;
 }
 
+/* ── Sound Synth Utility ───────────────────── */
+const playSound = (freq: number, type: OscillatorType, duration: number, vol = 0.1) => {
+  try {
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, ctx.currentTime);
+    gain.gain.setValueAtTime(vol, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + duration);
+  } catch (e) { /* Audio context not allowed until interaction */ }
+};
+
+const playTypingSound = () => playSound(150 + Math.random() * 100, 'sine', 0.05, 0.02);
+const playClickSound = () => playSound(400, 'square', 0.1, 0.05);
+const playEnterSound = () => playSound(800, 'triangle', 0.2, 0.05);
+
 /* ── Boot sequence ──────────────────────────── */
 const BOOT_LINES = [
-  '> Initializing AI-Core v1.0...',
-  '> Authenticating: Wahi-ur-Rehman...',
-  '> Loading modules: [AI] [Auto] [3D]',
-  '> System status: ████████ ONLINE',
-  '> Access Granted. Welcome.',
+  '> INITIALIZING AI_CORE v2.0.4...',
+  '> SCANNING HARDWARE...',
+  '> IDENTITY SCAN: [....................]',
+  '> USER RECOGNIZED: WAHI',
+  '> PERMISSION GRANTED: FULL_ACCESS',
+  '> LOADING MODULES: [NEURAL_ENGINE] [AUTO_PIPE] [3D_GRID]',
+  '> SYSTEM STATUS: ██████████ 100% ONLINE',
 ];
 
 /* ── Nav commands ───────────────────────────── */
 const COMMANDS: { label: string; section: Section }[] = [
-  { label: './overview.sh',   section: 'overview'    },
+  { label: './whoami.sh',     section: 'overview'    },
   { label: './projects.sh',   section: 'projects'    },
   { label: './experience.sh', section: 'experience'  },
   { label: './skills.sh',     section: 'skills'      },
 ];
 
-/* ── Typed-command routing ──────────────────── */
 const CMD_MAP: Record<string, Section | 'help' | 'system'> = {
   '/whoami': 'overview', '/about': 'overview',
   '/projects': 'projects',
@@ -43,30 +65,16 @@ const CMD_MAP: Record<string, Section | 'help' | 'system'> = {
   '/system': 'system', '/status': 'system',
 };
 
-/* ── AI assistant responses ─────────────────── */
 const AI_RESPONSES: Record<string, string> = {
-  projects:    'Active projects:\n  → AI Trading Bot  — ML scalping + risk management\n  → Automation Workflows — n8n pipelines & API integrations\nType /projects to view details.',
-  trading:     'AI Trading Bot uses scikit-learn for ML-based scalping with real-time MT5 data and automated risk controls.',
-  automation:  'Automation Workflows: n8n pipelines, email automation, Zapier-style API integrations for real-world tasks.',
-  skills:      'Core: Python · TensorFlow · React\nDomain: ML · Automation · 3D\nType /skills for the full breakdown.',
-  contact:     `Email   → ${portfolioData.contact.email}\nGitHub  → github.com/Wahi-ur-rehman\nLinkedIn → linkedin.com/in/wahi-abbasi`,
-  experience:  'Experience: Call Center Rep (1.5yr) · Sales · Teaching\nEducation: B.Sc AI @ SZABIST Islamabad (Exp. 2028)',
-  education:   "Pursuing Bachelor's in AI at SZABIST Islamabad — Expected graduation 2028.",
-  default:     'Wahi-Core AI v1.0\nUsage: /ask [topic]\nTopics: projects · skills · trading · automation · contact · experience',
+  projects:    'I currently have 5+ projects deployed. My flagship is the Autonomous Trading Engine using ML scalping.',
+  trading:     'The Trading Bot uses TensorFlow for real-time strategy optimization and MT5 API for execution.',
+  automation:  'Architected 3+ n8n workflows for enterprise data processing and automated reporting.',
+  skills:      'Technical Stack: Python (Automation), TensorFlow (ML), React (UX), n8n (Orchestration).',
+  contact:     `Secure channels established:\n  Email   → ${portfolioData.contact.email}\n  GitHub  → github.com/Wahi-ur-rehman`,
+  experience:  'Experience spans across Technical Support (1.5yr) and Hardware Commercial Relations.',
+  default:     'Wahi-Core AI v2.0 Ready. Type /ask [topic] to query my systems.',
 };
 
-const getAIResponse = (q: string) => {
-  const lower = q.toLowerCase();
-  for (const key of Object.keys(AI_RESPONSES)) {
-    if (lower.includes(key)) return AI_RESPONSES[key];
-  }
-  return AI_RESPONSES.default;
-};
-
-const HELP_TEXT  = 'Nav: /whoami  /projects  /work  /skills  /status\nAI:  /ask [anything about Wahi]';
-const SYS_TEXT   = 'AI-Core v1.0  |  User: Wahi-ur-Rehman  |  ● ONLINE\nModules: AI · Automation · 3D  |  Build: 2026.04';
-
-/* ═══════════════════════════════════════════════════════ */
 const TerminalPanel: React.FC<TerminalPanelProps> = ({ activeSection, setActiveSection }) => {
   const [bootLines,   setBootLines]   = useState<string[]>([]);
   const [booted,      setBooted]      = useState(false);
@@ -75,141 +83,140 @@ const TerminalPanel: React.FC<TerminalPanelProps> = ({ activeSection, setActiveS
   const [typedCmd,    setTypedCmd]    = useState('');
   const [log,         setLog]         = useState<LogEntry[]>([]);
   const [emailCopied, setEmailCopied] = useState(false);
+  const [isTyping,    setIsTyping]    = useState(false);
 
-  const bootedRef  = useRef(false);
-  const inputRef   = useRef<HTMLInputElement>(null);
   const scrollRef  = useRef<HTMLDivElement>(null);
+  const inputRef   = useRef<HTMLInputElement>(null);
+  const bootedRef  = useRef(false);
 
-  /* auto-scroll */
   useEffect(() => {
-    if (scrollRef.current)
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-  }, [log, booted, execState]);
+    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+  }, [log, booted, bootLines, isTyping]);
 
-  /* boot sequence (ref-guarded against StrictMode double-run) */
+  /* Typing effect helper */
+  const typeText = async (text: string, onUpdate: (current: string) => void, speed = 30) => {
+    setIsTyping(true);
+    let current = '';
+    for (let i = 0; i < text.length; i++) {
+      current += text[i];
+      onUpdate(current);
+      if (text[i] !== ' ') playTypingSound();
+      await new Promise(r => setTimeout(r, speed));
+    }
+    setIsTyping(false);
+  };
+
+  /* Boot Sequence */
   useEffect(() => {
     if (bootedRef.current) return;
     bootedRef.current = true;
-    let i = 0;
-    const tick = () => {
-      if (i < BOOT_LINES.length) {
-        setBootLines(p => [...p, BOOT_LINES[i++]]);
-        setTimeout(tick, 380);
-      } else {
-        setTimeout(() => setBooted(true), 250);
+
+    const runBoot = async () => {
+      for (const line of BOOT_LINES) {
+        setBootLines(p => [...p, line]);
+        playClickSound();
+        await new Promise(r => setTimeout(r, 250));
       }
+      setBooted(true);
     };
-    setTimeout(tick, 300);
+    runBoot();
   }, []);
 
   const pushLog = (e: LogEntry) => setLog(p => [...p, e]);
 
-  /* execute a section switch with animation */
-  const execSection = (section: Section, label: string) => {
+  const execSection = async (section: Section, label: string) => {
     if (execState === 'running') return;
-    pushLog({ type: 'cmd',      text: `$ ${label}` });
+    playClickSound();
+    pushLog({ type: 'cmd', text: `$ ${label}` });
     setExecState('running');
     setExecTarget(section);
+    
     setTimeout(() => {
       setActiveSection(section);
       setExecState('done');
-      pushLog({ type: 'response', text: `● Loaded: ${label.replace('./', '').replace('.sh', '')}` });
+      pushLog({ type: 'response', text: `● ACCESS_GRANTED: MODULE_LOADED` });
       setTimeout(() => { setExecState('idle'); setExecTarget(null); }, 350);
-    }, 480);
+    }, 600);
   };
 
-  /* handle typed commands */
-  const handleKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key !== 'Enter') return;
-    const raw = typedCmd.trim().toLowerCase();
+  const handleKey = async (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key !== 'Enter' || isTyping) return;
+    const raw = typedCmd.trim();
     if (!raw) return;
     setTypedCmd('');
+    playEnterSound();
 
-    /* /ask AI mode */
     if (raw.startsWith('/ask')) {
-      const query = raw.slice(4).trim();
+      const query = raw.slice(4).trim().toLowerCase();
       pushLog({ type: 'cmd', text: `$ ${raw}` });
-      pushLog({ type: 'ai',  text: '⠋ Processing...' });
-      setTimeout(() => {
-        setLog(prev => {
-          const next = [...prev];
-          next[next.length - 1] = { type: 'ai', text: getAIResponse(query) };
-          return next;
-        });
-      }, 580);
+      const entryIdx = log.length + 1;
+      pushLog({ type: 'ai', text: '...' });
+      
+      const response = Object.keys(AI_RESPONSES).find(k => query.includes(k)) 
+        ? AI_RESPONSES[Object.keys(AI_RESPONSES).find(k => query.includes(k))!] 
+        : AI_RESPONSES.default;
+
+      await typeText(response, (current) => {
+         setLog(prev => {
+            const next = [...prev];
+            next[entryIdx] = { type: 'ai', text: current };
+            return next;
+         });
+      });
       return;
     }
 
-    const target = CMD_MAP[raw];
+    const target = CMD_MAP[raw.toLowerCase()];
     if (target === 'help') {
       pushLog({ type: 'cmd', text: `$ ${raw}` });
-      pushLog({ type: 'response', text: HELP_TEXT });
+      pushLog({ type: 'response', text: 'Commands: /whoami /projects /work /skills /system /ask [topic]' });
     } else if (target === 'system') {
       pushLog({ type: 'cmd', text: `$ ${raw}` });
-      pushLog({ type: 'response', text: SYS_TEXT });
+      pushLog({ type: 'response', text: 'WAHI_OS v2.0.4 | KERNEL: NODE_V20 | UI: REACT_FIBER | STATUS: OPTIMAL' });
     } else if (target) {
       const cmd = COMMANDS.find(c => c.section === (target as Section));
       execSection(target as Section, cmd?.label ?? raw);
     } else {
-      pushLog({ type: 'cmd',   text: `$ ${raw}` });
-      pushLog({ type: 'error', text: `bash: ${raw}: not found. Try /help` });
+      pushLog({ type: 'cmd', text: `$ ${raw}` });
+      pushLog({ type: 'error', text: `Command not recognized. Type /help for assistance.` });
     }
-  };
-
-  const copyEmail = () => {
-    navigator.clipboard.writeText(portfolioData.contact.email);
-    setEmailCopied(true);
-    setTimeout(() => setEmailCopied(false), 2000);
   };
 
   return (
     <div className="terminal-panel" onClick={() => inputRef.current?.focus()}>
-
-      {/* macOS header */}
       <div className="terminal-header">
         <div className="window-controls">
           <span className="control close" />
           <span className="control minimize" />
           <span className="control maximize" />
         </div>
-        <div className="window-title">bash — admin@wahi-core: ~</div>
+        <div className="window-title">admin@wahi-core: ~ (bash)</div>
       </div>
 
       <div className="terminal-content" ref={scrollRef}>
-
-        {/* Boot */}
         <div className="boot-sequence">
           {bootLines.map((line, i) => (
-            <div key={i} className="boot-line">{line}</div>
+            <div key={i} className="boot-line" style={{ color: line.includes('WAHI') ? 'var(--accent)' : 'inherit' }}>
+              {line}
+            </div>
           ))}
         </div>
 
-        {/* Navigation */}
         {booted && (
           <div className="terminal-nav animate-terminal-in">
-            <p className="prompt-path">
-              admin@wahi-core:~$&nbsp;<span className="text-muted">ls -la modules/</span>
-            </p>
+            <p className="prompt-path">admin@wahi-core:~$&nbsp;<span className="text-muted">ls -la bin/</span></p>
             <ul className="nav-list">
               {COMMANDS.map(item => (
                 <li key={item.section}>
                   <button
-                    className={[
-                      'nav-button',
-                      activeSection === item.section ? 'active' : '',
-                      execState === 'running' && execTarget === item.section ? 'executing' : '',
-                    ].join(' ')}
+                    className={`nav-button magnetic ${activeSection === item.section ? 'active' : ''} ${execState === 'running' && execTarget === item.section ? 'executing' : ''}`}
                     onClick={() => execSection(item.section, item.label)}
                     disabled={execState === 'running'}
                   >
-                    <span className="nav-arrow">
-                      {activeSection === item.section ? '▸' : ' '}
-                    </span>
+                    <span className="nav-arrow">{activeSection === item.section ? '▸' : ' '}</span>
                     <span className="nav-label">{item.label}</span>
                     {execState === 'running' && execTarget === item.section && (
-                      <span className="exec-dots">
-                        <span /><span /><span />
-                      </span>
+                      <span className="exec-dots"><span /><span /><span /></span>
                     )}
                   </button>
                 </li>
@@ -218,21 +225,16 @@ const TerminalPanel: React.FC<TerminalPanelProps> = ({ activeSection, setActiveS
           </div>
         )}
 
-        {/* Output log */}
         {booted && log.length > 0 && (
           <div className="output-log">
             {log.map((entry, i) => (
-              <div key={i} className={`log-entry log-${entry.type}`}>
-                <pre>{entry.text}</pre>
-              </div>
+              <div key={i} className={`log-entry log-${entry.type}`}><pre>{entry.text}</pre></div>
             ))}
           </div>
         )}
 
-        {/* Command input */}
         {booted && (
-          <div className="terminal-input-area animate-terminal-in"
-            style={{ animationDelay: '0.1s' }}>
+          <div className="terminal-input-area animate-terminal-in">
             <div className="input-line">
               <span className="prompt-symbol">❯</span>
               <input
@@ -241,41 +243,36 @@ const TerminalPanel: React.FC<TerminalPanelProps> = ({ activeSection, setActiveS
                 value={typedCmd}
                 onChange={e => setTypedCmd(e.target.value)}
                 onKeyDown={handleKey}
-                placeholder="/help  or  /ask anything"
+                placeholder={isTyping ? "AI is typing..." : "Type /help or ask AI..."}
                 autoComplete="off"
-                spellCheck={false}
+                disabled={isTyping}
               />
-              <span className="input-cursor" />
+              {!isTyping && <span className="input-cursor" />}
             </div>
           </div>
         )}
 
-        {/* Contact */}
         {booted && (
-          <div className="terminal-contact animate-terminal-in"
-            style={{ animationDelay: '0.2s' }}>
-            <p className="prompt-path">
-              admin@wahi-core:~$&nbsp;<span className="text-muted">cat contact.txt</span>
-            </p>
+          <div className="terminal-contact animate-terminal-in" style={{ animationDelay: '0.2s', marginTop: '1.5rem' }}>
             <div className="contact-cards">
-              <a href={portfolioData.contact.github} target="_blank" rel="noreferrer"
-                className="contact-card github-card">
+              <a href={portfolioData.contact.github} target="_blank" rel="noreferrer" className="contact-card github-card magnetic">
                 <FaGithub className="contact-icon" /><span>GitHub</span>
               </a>
-              <a href={portfolioData.contact.linkedin} target="_blank" rel="noreferrer"
-                className="contact-card linkedin-card">
+              <a href={portfolioData.contact.linkedin} target="_blank" rel="noreferrer" className="contact-card linkedin-card magnetic">
                 <FaLinkedin className="contact-icon" /><span>LinkedIn</span>
               </a>
-              <button className="contact-card email-card" onClick={copyEmail}>
-                {emailCopied
-                  ? <MdCheck className="contact-icon" />
-                  : <MdEmail className="contact-icon" />}
-                <span>{emailCopied ? '✓ Copied!' : 'Copy Email'}</span>
+              <button className="contact-card email-card magnetic" onClick={() => {
+                navigator.clipboard.writeText(portfolioData.contact.email);
+                setEmailCopied(true);
+                playClickSound();
+                setTimeout(() => setEmailCopied(false), 2000);
+              }}>
+                {emailCopied ? <MdCheck className="contact-icon" /> : <MdEmail className="contact-icon" />}
+                <span>{emailCopied ? 'Copied!' : 'Copy Email'}</span>
               </button>
             </div>
           </div>
         )}
-
       </div>
     </div>
   );

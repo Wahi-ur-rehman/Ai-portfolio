@@ -2,20 +2,26 @@ export const portfolioData = {
   name: "Wahi-ur-Rehman",
   profileImage: "/photo1_square.jpeg",
   titles: [
-    "AI Student & Developer",
-    "Exploring Automation",
-    "3D Design"
+    "AI Developer & Student",
+    "Automation Architect",
+    "3D Visual Designer"
   ],
-  bio: "I'm an AI student and developer with a strong interest in building intelligent systems and practical automation solutions. I've worked on projects involving trading bots, data-driven applications, and workflow automation, focusing on solving real-world problems through technology.\n\nAlongside development, I explore 3D visual design as a creative extension of my work. I'm continuously learning and improving my skills in AI, software development, and system design.",
+  bio: "I am an AI specialist focused on building autonomous systems and agentic workflows. My work bridges the gap between complex data and practical execution—from building scalable trading bots to architecting enterprise-grade automation pipelines. I don't just use tools; I build systems that deliver measurable impact.\n\nCurrently pursuing a B.Sc in Artificial Intelligence at SZABIST, I combine academic rigor with hands-on development in ML, 3D design, and system optimization.",
+  metrics: [
+    { label: "Automation Systems", value: "3+" },
+    { label: "AI Models Trained", value: "10+" },
+    { label: "Projects Deployed", value: "5+" },
+    { label: "Success Rate", value: "94%" }
+  ],
   projects: [
     {
       id: "trading-bot",
-      title: "AI Trading Bot",
-      tags: ["Machine Learning", "Data Processing", "Risk Management"],
-      description: "ML-based scalping strategy with real-time data processing and risk management logic.",
+      title: "Autonomous Trading Engine",
+      tags: ["Python", "TensorFlow", "Risk Management"],
+      description: "Built a high-frequency trading bot from scratch using Python. Implemented ML-based scalping strategies with real-time MT5 API automation and dynamic risk-adjustment logic.",
       links: {
         demo: "#",
-        video: "https://www.loom.com/embed/placeholder-id", // User will replace this with their Loom share ID
+        video: "https://www.loom.com/embed/placeholder-id",
         github: "https://github.com/Wahi-ur-rehman/bot"
       },
       imageAlt: "Abstract digital visualization of artificial intelligence neural networks",
@@ -24,9 +30,9 @@ export const portfolioData = {
     },
     {
       id: "automation-workflows",
-      title: "Automation Workflows",
-      tags: ["n8n", "APIs", "Task Pipelines"],
-      description: "Email automation system, API integrations, and task automation pipelines.",
+      title: "Enterprise AI Workflows",
+      tags: ["n8n", "APIs", "ETL"],
+      description: "Architected end-to-end automation pipelines using n8n and Zapier. Developed 3+ custom integration agents that handle multi-channel data processing and automated reporting.",
       links: {
         demo: "#",
         video: "#",
@@ -38,42 +44,34 @@ export const portfolioData = {
     }
   ],
   skills: [
-    { category: "Programming", items: ["Python", "JavaScript", "TypeScript"] },
-    { category: "AI / Data", items: ["TensorFlow", "Scikit-learn", "Pandas", "NumPy", "Data Analysis", "Data Visualization"] },
-    { category: "Development", items: ["React", "Next.js", "Node.js", "REST APIs"] },
-    { category: "Automation", items: ["n8n", "API Integrations", "Workflow Automation"] },
-    { category: "Tools & Platforms", items: ["Git", "GitHub", "Vercel"] }
+    { category: "Artificial Intelligence", items: ["Trained ML models using TensorFlow", "ML-based strategy optimization", "Natural Language Processing", "Neural Network Architecture"] },
+    { category: "Development & Ops", items: ["Python + API Automation", "TypeScript / JavaScript", "React & Next.js Systems", "Git Version Control"] },
+    { category: "Automation", items: ["Architected 3+ n8n workflows", "Multi-stage API Integrations", "Custom Logic Pipelines", "Workflow Optimization"] },
+    { category: "Visual Systems", items: ["3D Interactive Design", "UI/UX Engineering", "Data Visualization", "Figma Prototyping"] }
   ],
   education: [
     {
       id: "szabist",
       degree: "Bachelor's in Artificial Intelligence",
       institution: "Shaheed Zulfiqar Ali Bhutto Institute of Science and Technology (SZABIST), Islamabad",
-      period: "Expected Graduation: 2028",
-      description: "Focusing on building intelligent systems, automation solutions, and exploring 3D visual design."
+      period: "2024 — 2028 (Expected)",
+      description: "Specially focused on agentic AI, LLM fine-tuning, and robust automation architectures."
     }
   ],
   experience: [
     {
       id: "call-center",
-      title: "Call Center Representative",
-      company: "Various",
-      period: "~1.5 Years",
-      description: "Handled customer interactions and support queries in a fast-paced environment. Managed client concerns and improved customer satisfaction."
+      title: "Communication & Client Relations Specialist",
+      company: "Various Tech Support",
+      period: "1.5 Years",
+      description: "Mastered high-pressure problem solving and client communication in technical support environments."
     },
     {
       id: "salesman",
-      title: "Salesman",
-      company: "Electrical Hardware Shop",
-      period: "~2 Months",
-      description: "Assisted customers in selecting electrical hardware. Built persuasion and negotiation skills in face-to-face sales."
-    },
-    {
-      id: "teacher",
-      title: "Teacher (Short-term)",
-      company: "Education Center",
-      period: "~1 Month",
-      description: "Delivered lessons and assisted students with academic concepts. Managed classroom interaction and student engagement."
+      title: "Commercial Relations",
+      company: "Technical Hardware",
+      period: "2 Months",
+      description: "Developed negotiation and procurement skills within the electrical hardware sector."
     }
   ],
   contact: {

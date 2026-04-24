@@ -1,51 +1,85 @@
-import React, { useRef, Component, ReactNode } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
-import { Points, PointMaterial } from '@react-three/drei';
+import React, { useRef, useMemo, Component, ReactNode } from 'react';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { Sphere, Float, MeshDistortMaterial } from '@react-three/drei';
 import * as THREE from 'three';
 
-// Error boundary so WebGL failures don't crash the entire app
+// Error boundary
 interface EBState { hasError: boolean; }
 class WebGLBoundary extends Component<{ children: ReactNode }, EBState> {
   state: EBState = { hasError: false };
   static getDerivedStateFromError() { return { hasError: true }; }
   render() {
-    if (this.state.hasError) return null; // graceful fallback: just show nothing
+    if (this.state.hasError) return null;
     return this.props.children;
   }
 }
 
-const ParticleField = () => {
-  const ref = useRef<THREE.Points>(null);
-  
-  // Create a subtle particle field
-  const particlesCount = 2000;
-  const positions = new Float32Array(particlesCount * 3);
-  
-  for (let i = 0; i < particlesCount; i++) {
-    positions[i * 3] = (Math.random() - 0.5) * 10;
-    positions[i * 3 + 1] = (Math.random() - 0.5) * 10;
-    positions[i * 3 + 2] = (Math.random() - 0.5) * 10;
-  }
+const NodeGraph = () => {
+  const groupRef = useRef<THREE.Group>(null);
+  const { mouse } = useThree();
 
-  useFrame((_state, delta) => {
-    if (ref.current) {
-      ref.current.rotation.x -= delta / 10;
-      ref.current.rotation.y -= delta / 15;
+  const nodeCount = 12;
+  const nodes = useMemo(() => {
+    const temp = [];
+    for (let i = 0; i < nodeCount; i++) {
+        temp.push({
+            position: new THREE.Vector3(
+                (Math.random() - 0.5) * 4,
+                (Math.random() - 0.5) * 4,
+                (Math.random() - 0.5) * 4
+            ),
+            speed: Math.random() * 0.01 + 0.005,
+            offset: Math.random() * 100
+        });
+    }
+    return temp;
+  }, []);
+
+  useFrame((state) => {
+    const time = state.clock.getElapsedTime();
+    if (groupRef.current) {
+        // Subtle rotation following mouse
+        groupRef.current.rotation.x = THREE.MathUtils.lerp(groupRef.current.rotation.x, mouse.y * 0.5, 0.1);
+        groupRef.current.rotation.y = THREE.MathUtils.lerp(groupRef.current.rotation.y, mouse.x * 0.5, 0.1);
+        
+        // Floating motion
+        groupRef.current.position.y = Math.sin(time) * 0.1;
     }
   });
 
   return (
-    <group rotation={[0, 0, Math.PI / 4]}>
-      <Points ref={ref} positions={positions} stride={3} frustumCulled={false}>
-        <PointMaterial
-          transparent
-          color="#3b82f6"
-          size={0.02}
-          sizeAttenuation={true}
-          depthWrite={false}
-          opacity={0.3}
-        />
-      </Points>
+    <group ref={groupRef}>
+      {/* Central Core */}
+      <Float speed={2} rotationIntensity={1} floatIntensity={1}>
+        <Sphere args={[0.4, 64, 64]}>
+          <MeshDistortMaterial
+            color="#3b82f6"
+            speed={3}
+            distort={0.4}
+            radius={1}
+            emissive="#1e40af"
+            emissiveIntensity={0.5}
+          />
+        </Sphere>
+      </Float>
+
+      {/* Orbiting Nodes */}
+      {nodes.map((node, i) => (
+        <mesh key={i} position={node.position}>
+          <sphereGeometry args={[0.05, 16, 16]} />
+          <meshStandardMaterial 
+            color="#3b82f6" 
+            emissive="#60a5fa" 
+            emissiveIntensity={2} 
+          />
+        </mesh>
+      ))}
+
+      {/* Connection Lines */}
+      <primitive object={new THREE.LineSegments(
+        new THREE.EdgesGeometry(new THREE.IcosahedronGeometry(2.5, 1)),
+        new THREE.LineBasicMaterial({ color: '#3b82f6', transparent: true, opacity: 0.1 })
+      )} />
     </group>
   );
 };
@@ -53,9 +87,11 @@ const ParticleField = () => {
 const Background3D: React.FC = () => {
   return (
     <WebGLBoundary>
-      <div className="background-3d-container">
-        <Canvas camera={{ position: [0, 0, 1] }} gl={{ failIfMajorPerformanceCaveat: false }}>
-          <ParticleField />
+      <div className="background-3d-container" style={{ position: 'absolute', right: '5%', top: '10%', width: '300px', height: '300px', pointerEvents: 'none', zIndex: 10 }}>
+        <Canvas camera={{ position: [0, 0, 8], fov: 40 }}>
+           <ambientLight intensity={0.5} />
+           <pointLight position={[10, 10, 10]} intensity={1} color="#3b82f6" />
+           <NodeGraph />
         </Canvas>
       </div>
     </WebGLBoundary>
