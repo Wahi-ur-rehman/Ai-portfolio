@@ -11,12 +11,30 @@ interface ContentPanelProps {
 const ContentPanel: React.FC<ContentPanelProps> = ({ activeSection }) => {
   return (
     <div className="content-panel">
-      {/* key change forces re-mount → re-triggers CSS animation */}
-      <div key={activeSection} className="content-view-wrapper animate-slide-in">
-        {activeSection === 'overview' && <OverviewView />}
-        {activeSection === 'projects' && <ProjectsView />}
-        {activeSection === 'experience' && <ExperienceView />}
-        {activeSection === 'skills' && <SkillsView />}
+      <div className="content-view-wrapper">
+        <section id="overview" className={`section-container ${activeSection === 'overview' ? 'active-ref' : ''}`}>
+          <div className="stagger-item stagger-1">
+            <OverviewView />
+          </div>
+        </section>
+        
+        <section id="projects" className={`section-container ${activeSection === 'projects' ? 'active-ref' : ''}`}>
+          <div className="stagger-item stagger-1">
+            <ProjectsView />
+          </div>
+        </section>
+        
+        <section id="experience" className={`section-container ${activeSection === 'experience' ? 'active-ref' : ''}`}>
+          <div className="stagger-item stagger-1">
+            <ExperienceView />
+          </div>
+        </section>
+        
+        <section id="skills" className={`section-container ${activeSection === 'skills' ? 'active-ref' : ''}`}>
+          <div className="stagger-item stagger-1">
+            <SkillsView />
+          </div>
+        </section>
       </div>
     </div>
   );

@@ -35,15 +35,15 @@ const NodeGraph = () => {
     return temp;
   }, []);
 
-  useFrame((state) => {
-    const time = state.clock.getElapsedTime();
+  useFrame(() => {
     if (groupRef.current) {
-        // Subtle rotation following mouse
-        groupRef.current.rotation.x = THREE.MathUtils.lerp(groupRef.current.rotation.x, mouse.y * 0.5, 0.1);
-        groupRef.current.rotation.y = THREE.MathUtils.lerp(groupRef.current.rotation.y, mouse.x * 0.5, 0.1);
+        // Smooth rotation
+        groupRef.current.rotation.x = THREE.MathUtils.lerp(groupRef.current.rotation.x, mouse.y * 0.4, 0.05);
+        groupRef.current.rotation.y = THREE.MathUtils.lerp(groupRef.current.rotation.y, mouse.x * 0.4, 0.05);
         
-        // Floating motion
-        groupRef.current.position.y = Math.sin(time) * 0.1;
+        // Smooth position follow (within its bounds)
+        groupRef.current.position.x = THREE.MathUtils.lerp(groupRef.current.position.x, mouse.x * 2, 0.05);
+        groupRef.current.position.y = THREE.MathUtils.lerp(groupRef.current.position.y, mouse.y * 2, 0.05);
     }
   });
 

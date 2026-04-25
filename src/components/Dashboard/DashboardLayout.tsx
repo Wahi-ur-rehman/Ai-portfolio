@@ -7,42 +7,57 @@ type Section = 'overview' | 'projects' | 'experience' | 'skills';
 const DashboardLayout: React.FC = () => {
   const [activeSection, setActiveSection] = useState<Section>('overview');
   const [drawerOpen,    setDrawerOpen]    = useState(false);
-  const [mousePos,      setMousePos]      = useState({ x: -100, y: -100 });
   const [isBooting,     setIsBooting]     = useState(true);
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const cursorRef    = useRef<HTMLDivElement>(null);
+  const mousePos     = useRef({ x: -100, y: -100 });
+  const smoothedPos  = useRef({ x: -100, y: -100 });
 
   useEffect(() => {
+    // ── Cursor Smoothing (Lerp) ──
     const handleMouseMove = (e: MouseEvent) => {
-      setMousePos({ x: e.clientX, y: e.clientY });
-      
-      // Magnetic effect for elements with .magnetic class
-      const magneticElements = document.querySelectorAll('.magnetic');
-      magneticElements.forEach((el) => {
-        const rect = el.getBoundingClientRect();
-        const centerX = rect.left + rect.width / 2;
-        const centerY = rect.top + rect.height / 2;
-        const distanceX = e.clientX - centerX;
-        const distanceY = e.clientY - centerY;
-        const distance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
+      mousePos.current = { x: e.clientX, y: e.clientY };
+    };
 
-        if (distance < 80) {
-          const x = distanceX * 0.3;
-          const y = distanceY * 0.3;
-          (el as HTMLElement).style.transform = `translate(${x}px, ${y}px)`;
-        } else {
-          (el as HTMLElement).style.transform = `translate(0px, 0px)`;
-        }
-      });
+    const animateCursor = () => {
+      const lerp = 0.08;
+      smoothedPos.current.x += (mousePos.current.x - smoothedPos.current.x) * lerp;
+      smoothedPos.current.y += (mousePos.current.y - smoothedPos.current.y) * lerp;
+
+      if (cursorRef.current) {
+        cursorRef.current.style.transform = `translate3d(${smoothedPos.current.x}px, ${smoothedPos.current.y}px, 0)`;
+      }
+      requestAnimationFrame(animateCursor);
     };
 
     window.addEventListener('mousemove', handleMouseMove);
+    const animationFrame = requestAnimationFrame(animateCursor);
     
-    // Simulate initial boot sequence
+    // ── Intersection Observer for Scroll Sync ──
+    const observerOptions = {
+      root: containerRef.current?.querySelector('.content-view-wrapper'),
+      threshold: 0.6,
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          setActiveSection(entry.target.id as Section);
+          entry.target.classList.add('visible');
+        }
+      });
+    }, observerOptions);
+
+    const sections = document.querySelectorAll('.section-container');
+    sections.forEach((section) => observer.observe(section));
+
     const timer = setTimeout(() => setIsBooting(false), 3000);
 
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
+      cancelAnimationFrame(animationFrame);
+      observer.disconnect();
       clearTimeout(timer);
     };
   }, []);
@@ -50,10 +65,11 @@ const DashboardLayout: React.FC = () => {
   return (
     <div className="dashboard-layout" ref={containerRef}>
       
-      {/* ── Cursor Glow ── */}
+      {/* ── Cursor Glow (Smoothed) ── */}
       <div 
         className="cursor-glow" 
-        style={{ left: mousePos.x, top: mousePos.y }} 
+        ref={cursorRef}
+        style={{ position: 'fixed', left: 0, top: 0, pointerEvents: 'none' }}
       />
 
       {/* ── Boot Identity Scan ── */}
@@ -74,18 +90,20 @@ const DashboardLayout: React.FC = () => {
       {/* ── Split-screen UI ── */}
       <div className="dashboard-ui">
 
-        {/* Left: terminal (desktop always visible, mobile = drawer) */}
+        {/* Left: terminal */}
         <div className={`terminal-wrapper ${drawerOpen ? 'drawer-open' : ''}`}>
-          {/* Mobile drag handle */}
           <div className="drawer-handle" onClick={() => setDrawerOpen(o => !o)} />
           <TerminalPanel
             activeSection={activeSection}
-            setActiveSection={setActiveSection}
+            setActiveSection={(s) => {
+              setActiveSection(s);
+              document.getElementById(s)?.scrollIntoView({ behavior: 'smooth' });
+            }}
           />
         </div>
 
         {/* Right: content */}
-        <div className="content-panel-wrapper animate-slide-in" key={activeSection}>
+        <div className="content-panel-wrapper animate-slide-in">
           <ContentPanel activeSection={activeSection} />
         </div>
 

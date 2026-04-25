@@ -27,7 +27,7 @@ const OverviewView: React.FC = () => {
       <h1 className="view-title">System Overview</h1>
 
       {/* ── Intro card with depth ── */}
-      <div className="overview-intro-card depth-hover">
+      <div className="overview-intro-card depth-hover stagger-item stagger-1">
         <div className="overview-header">
           <img
             src={portfolioData.profileImage}
@@ -47,8 +47,8 @@ const OverviewView: React.FC = () => {
       </div>
 
       {/* ── Metrics Grid ── */}
-      <div className="section-label">Performance Metrics</div>
-      <div className="snapshot-grid">
+      <div className="section-label stagger-item stagger-2">Performance Metrics</div>
+      <div className="snapshot-grid stagger-item stagger-2">
         {(portfolioData as any).metrics?.map((m: any, i: number) => (
           <div key={i} className="snapshot-group depth-hover" style={{ textAlign: 'center' }}>
             <span className="snapshot-label" style={{ marginBottom: '0.2rem' }}>{m.label}</span>
@@ -60,8 +60,8 @@ const OverviewView: React.FC = () => {
       </div>
 
       {/* ── Focus areas ── */}
-      <div className="section-label">Core Specializations</div>
-      <div className="focus-areas-grid">
+      <div className="section-label stagger-item stagger-3">Core Specializations</div>
+      <div className="focus-areas-grid stagger-item stagger-3">
         {focusAreas.map((area, i) => (
           <div key={i} className="focus-card depth-hover">
             <span className="focus-icon">{area.icon}</span>

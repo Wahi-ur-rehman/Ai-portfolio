@@ -7,8 +7,8 @@ const ProjectsView: React.FC = () => {
       <h1 className="view-title">System Implementations</h1>
       
       <div className="projects-grid">
-        {portfolioData.projects.map(project => (
-          <div key={project.id} className="project-card depth-hover">
+        {portfolioData.projects.map((project, i) => (
+          <div key={project.id} className={`project-card depth-hover stagger-item stagger-${(i % 4) + 1}`}>
             <div className="project-image-container">
               <img src={project.imageSrc} alt={project.imageAlt} className="project-image" />
               <div className="project-overlay">

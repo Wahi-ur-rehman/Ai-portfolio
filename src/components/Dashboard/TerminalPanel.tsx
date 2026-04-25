@@ -127,6 +127,16 @@ const TerminalPanel: React.FC<TerminalPanelProps> = ({ activeSection, setActiveS
   const execSection = async (section: Section, label: string) => {
     if (execState === 'running') return;
     playClickSound();
+    
+    // Add reactive flash to background
+    const bg = document.querySelector('.neural-bg');
+    if (bg) {
+      bg.classList.remove('flash');
+      void (bg as HTMLElement).offsetWidth; // trigger reflow
+      bg.classList.add('flash');
+      setTimeout(() => bg.classList.remove('flash'), 400);
+    }
+
     pushLog({ type: 'cmd', text: `$ ${label}` });
     setExecState('running');
     setExecTarget(section);
