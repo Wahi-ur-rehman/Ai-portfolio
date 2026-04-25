@@ -87,10 +87,10 @@ const NodeGraph = () => {
 const Background3D: React.FC = () => {
   return (
     <WebGLBoundary>
-      <div className="background-3d-container" style={{ position: 'absolute', right: '5%', top: '10%', width: '300px', height: '300px', pointerEvents: 'none', zIndex: 10 }}>
-        <Canvas camera={{ position: [0, 0, 8], fov: 40 }}>
-           <ambientLight intensity={0.5} />
-           <pointLight position={[10, 10, 10]} intensity={1} color="#3b82f6" />
+      <div className="background-3d-container" style={{ position: 'absolute', right: '5%', top: '10%', width: '250px', height: '250px', pointerEvents: 'none', zIndex: 10 }}>
+        <Canvas camera={{ position: [0, 0, 8], fov: 40 }} dpr={[1, 2]}>
+           <ambientLight intensity={0.4} />
+           <pointLight position={[5, 5, 5]} intensity={0.8} color="#3b82f6" />
            <NodeGraph />
         </Canvas>
       </div>
@@ -99,3 +99,4 @@ const Background3D: React.FC = () => {
 };
 
 export default Background3D;
+

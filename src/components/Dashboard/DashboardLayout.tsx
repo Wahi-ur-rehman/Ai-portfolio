@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import TerminalPanel from './TerminalPanel';
 import ContentPanel from './ContentPanel';
+import Background3D from './Background3D';
 
 type Section = 'overview' | 'projects' | 'experience' | 'skills';
 
@@ -16,34 +17,37 @@ const DashboardLayout: React.FC = () => {
 
   useEffect(() => {
     // ── Cursor Smoothing (Lerp) ──
+    let rafId: number;
     const handleMouseMove = (e: MouseEvent) => {
       mousePos.current = { x: e.clientX, y: e.clientY };
     };
 
     const animateCursor = () => {
-      const lerp = 0.08;
+      const lerp = 0.12; // Increased speed for snappier feel
       smoothedPos.current.x += (mousePos.current.x - smoothedPos.current.x) * lerp;
       smoothedPos.current.y += (mousePos.current.y - smoothedPos.current.y) * lerp;
 
       if (cursorRef.current) {
         cursorRef.current.style.transform = `translate3d(${smoothedPos.current.x}px, ${smoothedPos.current.y}px, 0)`;
       }
-      requestAnimationFrame(animateCursor);
+      rafId = requestAnimationFrame(animateCursor);
     };
 
     window.addEventListener('mousemove', handleMouseMove);
-    const animationFrame = requestAnimationFrame(animateCursor);
+    rafId = requestAnimationFrame(animateCursor);
     
     // ── Intersection Observer for Scroll Sync ──
+    const wrapper = containerRef.current?.querySelector('.content-view-wrapper');
     const observerOptions = {
-      root: containerRef.current?.querySelector('.content-view-wrapper'),
-      threshold: 0.6,
+      root: wrapper,
+      threshold: 0.5,
     };
 
     const observer = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
-          setActiveSection(entry.target.id as Section);
+          const id = entry.target.id as Section;
+          setActiveSection(id);
           entry.target.classList.add('visible');
         }
       });
@@ -52,11 +56,11 @@ const DashboardLayout: React.FC = () => {
     const sections = document.querySelectorAll('.section-container');
     sections.forEach((section) => observer.observe(section));
 
-    const timer = setTimeout(() => setIsBooting(false), 3000);
+    const timer = setTimeout(() => setIsBooting(false), 2000);
 
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
-      cancelAnimationFrame(animationFrame);
+      cancelAnimationFrame(rafId);
       observer.disconnect();
       clearTimeout(timer);
     };
@@ -74,6 +78,9 @@ const DashboardLayout: React.FC = () => {
 
       {/* ── Boot Identity Scan ── */}
       {isBooting && <div className="identity-scan-bar" />}
+
+      {/* ── 3D Decorative Node Graph ── */}
+      <Background3D />
 
       {/* ── Pure CSS neural grid background ── */}
       <div className="neural-bg" aria-hidden="true" />
@@ -103,9 +110,7 @@ const DashboardLayout: React.FC = () => {
         </div>
 
         {/* Right: content */}
-        <div className="content-panel-wrapper animate-slide-in">
-          <ContentPanel activeSection={activeSection} />
-        </div>
+        <ContentPanel activeSection={activeSection} />
 
       </div>
     </div>
