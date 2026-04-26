@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import TerminalPanel from './TerminalPanel';
 import ContentPanel from './ContentPanel';
 import Background3D from './Background3D';
+import CustomCursor from '../Effects/CustomCursor';
+import { motion, AnimatePresence } from 'framer-motion';
 
 type Section = 'overview' | 'projects' | 'experience' | 'skills';
 
@@ -11,36 +13,13 @@ const DashboardLayout: React.FC = () => {
   const [isBooting,     setIsBooting]     = useState(true);
 
   const containerRef = useRef<HTMLDivElement>(null);
-  const cursorRef    = useRef<HTMLDivElement>(null);
-  const mousePos     = useRef({ x: -100, y: -100 });
-  const smoothedPos  = useRef({ x: -100, y: -100 });
 
   useEffect(() => {
-    // ── Cursor Smoothing (Lerp) ──
-    let rafId: number;
-    const handleMouseMove = (e: MouseEvent) => {
-      mousePos.current = { x: e.clientX, y: e.clientY };
-    };
-
-    const animateCursor = () => {
-      const lerp = 0.12; // Increased speed for snappier feel
-      smoothedPos.current.x += (mousePos.current.x - smoothedPos.current.x) * lerp;
-      smoothedPos.current.y += (mousePos.current.y - smoothedPos.current.y) * lerp;
-
-      if (cursorRef.current) {
-        cursorRef.current.style.transform = `translate3d(${smoothedPos.current.x}px, ${smoothedPos.current.y}px, 0)`;
-      }
-      rafId = requestAnimationFrame(animateCursor);
-    };
-
-    window.addEventListener('mousemove', handleMouseMove);
-    rafId = requestAnimationFrame(animateCursor);
-    
     // ── Intersection Observer for Scroll Sync ──
     const wrapper = containerRef.current?.querySelector('.content-view-wrapper');
     const observerOptions = {
       root: wrapper,
-      threshold: 0.5,
+      threshold: 0.3,
     };
 
     const observer = new IntersectionObserver((entries) => {
@@ -56,12 +35,24 @@ const DashboardLayout: React.FC = () => {
     const sections = document.querySelectorAll('.section-container');
     sections.forEach((section) => observer.observe(section));
 
+    // Handle Keyboard Shortcuts
+    const handleKey = (e: KeyboardEvent) => {
+       if (e.key === '~' || e.key === '`') {
+          setDrawerOpen(prev => !prev);
+          // Focus terminal input if opening
+          setTimeout(() => {
+             const input = document.querySelector('.terminal-input') as HTMLInputElement;
+             input?.focus();
+          }, 100);
+       }
+    };
+    window.addEventListener('keydown', handleKey);
+
     const timer = setTimeout(() => setIsBooting(false), 2000);
 
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      cancelAnimationFrame(rafId);
       observer.disconnect();
+      window.removeEventListener('keydown', handleKey);
       clearTimeout(timer);
     };
   }, []);
@@ -69,20 +60,20 @@ const DashboardLayout: React.FC = () => {
   return (
     <div className="dashboard-layout" ref={containerRef}>
       
-      {/* ── Cursor Glow (Smoothed) ── */}
-      <div 
-        className="cursor-glow" 
-        ref={cursorRef}
-        style={{ position: 'fixed', left: 0, top: 0, pointerEvents: 'none' }}
-      />
+      <CustomCursor />
 
       {/* ── Boot Identity Scan ── */}
-      {isBooting && <div className="identity-scan-bar" />}
+      <AnimatePresence>
+        {isBooting && (
+          <motion.div 
+            className="identity-scan-bar" 
+            exit={{ opacity: 0 }}
+          />
+        )}
+      </AnimatePresence>
 
-      {/* ── 3D Decorative Node Graph ── */}
       <Background3D />
 
-      {/* ── Pure CSS neural grid background ── */}
       <div className="neural-bg" aria-hidden="true" />
 
       {/* ── Mobile drawer toggle ── */}
@@ -91,14 +82,19 @@ const DashboardLayout: React.FC = () => {
         onClick={() => setDrawerOpen(o => !o)}
         aria-label={drawerOpen ? 'Close terminal' : 'Open terminal'}
       >
-        {drawerOpen ? '✕' : '⌨'}
+        {drawerOpen ? '✕' : <span style={{ fontSize: '1.4rem' }}>⌨</span>}
       </button>
 
       {/* ── Split-screen UI ── */}
       <div className="dashboard-ui">
 
         {/* Left: terminal */}
-        <div className={`terminal-wrapper ${drawerOpen ? 'drawer-open' : ''}`}>
+        <motion.div 
+           className={`terminal-wrapper ${drawerOpen ? 'drawer-open' : ''}`}
+           initial={{ x: -20, opacity: 0 }}
+           animate={{ x: 0, opacity: 1 }}
+           transition={{ duration: 0.5, delay: 0.2 }}
+        >
           <div className="drawer-handle" onClick={() => setDrawerOpen(o => !o)} />
           <TerminalPanel
             activeSection={activeSection}
@@ -107,10 +103,17 @@ const DashboardLayout: React.FC = () => {
               document.getElementById(s)?.scrollIntoView({ behavior: 'smooth' });
             }}
           />
-        </div>
+        </motion.div>
 
         {/* Right: content */}
-        <ContentPanel activeSection={activeSection} />
+        <motion.div 
+           style={{ flex: 1, minWidth: 0, height: '100%' }}
+           initial={{ x: 20, opacity: 0 }}
+           animate={{ x: 0, opacity: 1 }}
+           transition={{ duration: 0.5, delay: 0.3 }}
+        >
+          <ContentPanel activeSection={activeSection} />
+        </motion.div>
 
       </div>
     </div>

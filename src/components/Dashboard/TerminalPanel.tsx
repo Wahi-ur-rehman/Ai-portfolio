@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { portfolioData } from '../../data/portfolioData';
-import { FaGithub, FaLinkedin } from 'react-icons/fa';
-import { MdEmail, MdCheck } from 'react-icons/md';
+import { FaGithub, FaLinkedin, FaCalendarAlt } from 'react-icons/fa';
+import { MdEmail, MdCheck, MdTerminal } from 'react-icons/md';
+import { motion, AnimatePresence } from 'framer-motion';
 
 type Section = 'overview' | 'projects' | 'experience' | 'skills';
 type ExecState = 'idle' | 'running' | 'done';
@@ -37,160 +38,78 @@ const playTypingSound = () => playSound(150 + Math.random() * 100, 'sine', 0.05,
 const playClickSound = () => playSound(400, 'square', 0.1, 0.05);
 const playEnterSound = () => playSound(800, 'triangle', 0.2, 0.05);
 
-/* ── Boot sequence ──────────────────────────── */
-const BOOT_LINES = [
-  '> INITIALIZING AI_CORE v2.0.4...',
-  '> SCANNING HARDWARE...',
-  '> IDENTITY SCAN: [....................]',
-  '> USER RECOGNIZED: WAHI',
-  '> PERMISSION GRANTED: FULL_ACCESS',
-  '> LOADING MODULES: [NEURAL_ENGINE] [AUTO_PIPE] [3D_GRID]',
-  '> SYSTEM STATUS: ██████████ 100% ONLINE',
-];
-
-/* ── Nav commands ───────────────────────────── */
-const COMMANDS: { label: string; section: Section }[] = [
-  { label: './whoami.sh',     section: 'overview'    },
-  { label: './projects.sh',   section: 'projects'    },
-  { label: './experience.sh', section: 'experience'  },
-  { label: './skills.sh',     section: 'skills'      },
-];
-
-const CMD_MAP: Record<string, Section | 'help' | 'system'> = {
-  '/whoami': 'overview', '/about': 'overview',
-  '/projects': 'projects',
-  '/work': 'experience', '/experience': 'experience',
-  '/skills': 'skills',
-  '/help': 'help',
-  '/system': 'system', '/status': 'system',
-};
-
-const AI_RESPONSES: Record<string, string> = {
-  projects:    'I currently have 5+ projects deployed. My flagship is the Autonomous Trading Engine using ML scalping.',
-  trading:     'The Trading Bot uses TensorFlow for real-time strategy optimization and MT5 API for execution.',
-  automation:  'Architected 3+ n8n workflows for enterprise data processing and automated reporting.',
-  skills:      'Technical Stack: Python (Automation), TensorFlow (ML), React (UX), n8n (Orchestration).',
-  contact:     `Secure channels established:\n  Email   → ${portfolioData.contact.email}\n  GitHub  → github.com/Wahi-ur-rehman`,
-  experience:  'Experience spans across Technical Support (1.5yr) and Hardware Commercial Relations.',
-  default:     'Wahi-Core AI v2.0 Ready. Type /ask [topic] to query my systems.',
-};
-
 const TerminalPanel: React.FC<TerminalPanelProps> = ({ activeSection, setActiveSection }) => {
-  const [bootLines,   setBootLines]   = useState<string[]>([]);
-  const [booted,      setBooted]      = useState(false);
-  const [execState,   setExecState]   = useState<ExecState>('idle');
-  const [execTarget,  setExecTarget]  = useState<Section | null>(null);
-  const [typedCmd,    setTypedCmd]    = useState('');
-  const [log,         setLog]         = useState<LogEntry[]>([]);
+  const [booted, setBooted] = useState(false);
+  const [log, setLog] = useState<LogEntry[]>([]);
+  const [typedCmd, setTypedCmd] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
   const [emailCopied, setEmailCopied] = useState(false);
-  const [isTyping,    setIsTyping]    = useState(false);
-
-  const scrollRef  = useRef<HTMLDivElement>(null);
-  const inputRef   = useRef<HTMLInputElement>(null);
-  const bootedRef  = useRef(false);
+  
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-  }, [log, booted, bootLines, isTyping]);
+  }, [log, isTyping]);
 
-  /* Typing effect helper */
-  const typeText = async (text: string, onUpdate: (current: string) => void, speed = 30) => {
+  const typeText = async (text: string, type: 'ai' | 'response' | 'error' = 'ai') => {
     setIsTyping(true);
     let current = '';
+    const entryIdx = log.length;
+    setLog(prev => [...prev, { type, text: '' }]);
+
     for (let i = 0; i < text.length; i++) {
-      current += text[i];
-      onUpdate(current);
-      if (text[i] !== ' ') playTypingSound();
-      await new Promise(r => setTimeout(r, speed));
+        current += text[i];
+        setLog(prev => {
+            const next = [...prev];
+            next[entryIdx] = { type, text: current };
+            return next;
+        });
+        if (text[i] !== ' ') playTypingSound();
+        await new Promise(r => setTimeout(r, 20));
     }
     setIsTyping(false);
   };
 
-  /* Boot Sequence */
-  useEffect(() => {
-    if (bootedRef.current) return;
-    bootedRef.current = true;
-
-    const runBoot = async () => {
-      for (const line of BOOT_LINES) {
-        setBootLines(p => [...p, line]);
-        playClickSound();
-        await new Promise(r => setTimeout(r, 250));
-      }
-      setBooted(true);
-    };
-    runBoot();
-  }, []);
-
-  const pushLog = (e: LogEntry) => setLog(p => [...p, e]);
-
-  const execSection = async (section: Section, label: string) => {
-    if (execState === 'running') return;
-    playClickSound();
-    
-    // Add reactive flash to background
-    const bg = document.querySelector('.neural-bg');
-    if (bg) {
-      bg.classList.remove('flash');
-      void (bg as HTMLElement).offsetWidth; // trigger reflow
-      bg.classList.add('flash');
-      setTimeout(() => bg.classList.remove('flash'), 400);
-    }
-
-    pushLog({ type: 'cmd', text: `$ ${label}` });
-    setExecState('running');
-    setExecTarget(section);
-    
-    setTimeout(() => {
-      setActiveSection(section);
-      setExecState('done');
-      pushLog({ type: 'response', text: `● ACCESS_GRANTED: MODULE_LOADED` });
-      setTimeout(() => { setExecState('idle'); setExecTarget(null); }, 350);
-    }, 600);
-  };
-
-  const handleKey = async (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key !== 'Enter' || isTyping) return;
-    const raw = typedCmd.trim();
-    if (!raw) return;
-    setTypedCmd('');
+  const handleCommand = async (cmd: string) => {
+    const raw = cmd.trim().toLowerCase();
+    setLog(prev => [...prev, { type: 'cmd', text: `❯ ${cmd}` }]);
     playEnterSound();
 
-    if (raw.startsWith('/ask')) {
-      const query = raw.slice(4).trim().toLowerCase();
-      pushLog({ type: 'cmd', text: `$ ${raw}` });
-      const entryIdx = log.length + 1;
-      pushLog({ type: 'ai', text: '...' });
-      
-      const response = Object.keys(AI_RESPONSES).find(k => query.includes(k)) 
-        ? AI_RESPONSES[Object.keys(AI_RESPONSES).find(k => query.includes(k))!] 
-        : AI_RESPONSES.default;
-
-      await typeText(response, (current) => {
-         setLog(prev => {
-            const next = [...prev];
-            next[entryIdx] = { type: 'ai', text: current };
-            return next;
-         });
-      });
-      return;
-    }
-
-    const target = CMD_MAP[raw.toLowerCase()];
-    if (target === 'help') {
-      pushLog({ type: 'cmd', text: `$ ${raw}` });
-      pushLog({ type: 'response', text: 'Commands: /whoami /projects /work /skills /system /ask [topic]' });
-    } else if (target === 'system') {
-      pushLog({ type: 'cmd', text: `$ ${raw}` });
-      pushLog({ type: 'response', text: 'WAHI_OS v2.0.4 | KERNEL: NODE_V20 | UI: REACT_FIBER | STATUS: OPTIMAL' });
-    } else if (target) {
-      const cmd = COMMANDS.find(c => c.section === (target as Section));
-      execSection(target as Section, cmd?.label ?? raw);
+    if (raw === 'ls' || raw === 'show projects') {
+      await typeText(`found ${portfolioData.projects.length} artifacts:\n` + portfolioData.projects.map(p => `  - ${p.title} [${p.id}]`).join('\n'), 'response');
+    } else if (raw === 'whoami' || raw === 'about') {
+      await typeText(portfolioData.personalStory, 'ai');
+    } else if (raw === 'clear') {
+      setLog([]);
+    } else if (raw === 'help') {
+      await typeText('Available Commands:\n  ls         - show all projects\n  whoami     - show mission statement\n  cat resume - view academic background\n  contact    - secure communication channels\n  clear      - reset terminal\n\n  Or try: "/ask [anything about me]"', 'response');
+    } else if (raw.startsWith('cat resume') || raw === 'education') {
+       await typeText(`Degree: ${portfolioData.education[0].degree}\nInst: ${portfolioData.education[0].institution}\nPeriod: ${portfolioData.education[0].period}\n\n"Focusing on high-performance agentic systems."`, 'response');
+    } else if (raw === 'contact') {
+       await typeText(`Secure Channels Open:\n  Email    -> ${portfolioData.contact.email}\n  GitHub   -> ${portfolioData.contact.github}\n  Calendly -> ${portfolioData.contact.calendly}`, 'response');
+    } else if (raw.startsWith('/ask')) {
+       const q = raw.slice(4).trim();
+       if (q.includes('trading')) {
+         await typeText("The Autonomous Trading Engine uses a custom-trained TensorFlow model to predict micro-trends and executes trades with sub-50ms latency.", 'ai');
+       } else if (q.includes('automation') || q.includes('n8n')) {
+         await typeText("I architect enterprise-grade workflows that reduce manual processing time by up to 92% using agentic reasoning.", 'ai');
+       } else {
+         await typeText("Wahi-Core AI v2.0 ready. I am an autonomous system designed to build more autonomous systems. Ask me about my trading bots or workflow automation.", 'ai');
+       }
     } else {
-      pushLog({ type: 'cmd', text: `$ ${raw}` });
-      pushLog({ type: 'error', text: `Command not recognized. Type /help for assistance.` });
+      await typeText(`Command "${cmd}" not recognized. Type "help" for a list of available commands.`, 'error');
     }
   };
+
+  useEffect(() => {
+    const boot = async () => {
+      await new Promise(r => setTimeout(r, 500));
+      setBooted(true);
+      await typeText("WAHI_OS [Version 2.0.4] Initialized. Identity verified. Full system access granted.", 'response');
+    };
+    boot();
+  }, []);
 
   return (
     <div className="terminal-panel" onClick={() => inputRef.current?.focus()}>
@@ -201,50 +120,23 @@ const TerminalPanel: React.FC<TerminalPanelProps> = ({ activeSection, setActiveS
           <span className="control maximize" />
         </div>
         <div className="window-title">admin@wahi-core: ~ (bash)</div>
+        <div style={{ position: 'absolute', right: '1rem', color: 'var(--green)', fontSize: '0.65rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
+           <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--green)', animation: 'glowPulse 2s infinite' }} />
+           WAHI_AI_ONLINE
+        </div>
       </div>
 
       <div className="terminal-content" ref={scrollRef}>
-        <div className="boot-sequence">
-          {bootLines.map((line, i) => (
-            <div key={i} className="boot-line" style={{ color: line.includes('WAHI') ? 'var(--accent)' : 'inherit' }}>
-              {line}
+        <div className="output-log">
+          {log.map((entry, i) => (
+            <div key={i} className={`log-entry log-${entry.type}`}>
+               <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{entry.text}</pre>
             </div>
           ))}
         </div>
 
         {booted && (
-          <div className="terminal-nav animate-terminal-in">
-            <p className="prompt-path">admin@wahi-core:~$&nbsp;<span className="text-muted">ls -la bin/</span></p>
-            <ul className="nav-list">
-              {COMMANDS.map(item => (
-                <li key={item.section}>
-                  <button
-                    className={`nav-button magnetic ${activeSection === item.section ? 'active' : ''} ${execState === 'running' && execTarget === item.section ? 'executing' : ''}`}
-                    onClick={() => execSection(item.section, item.label)}
-                    disabled={execState === 'running'}
-                  >
-                    <span className="nav-arrow">{activeSection === item.section ? '▸' : ' '}</span>
-                    <span className="nav-label">{item.label}</span>
-                    {execState === 'running' && execTarget === item.section && (
-                      <span className="exec-dots"><span /><span /><span /></span>
-                    )}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {booted && log.length > 0 && (
-          <div className="output-log">
-            {log.map((entry, i) => (
-              <div key={i} className={`log-entry log-${entry.type}`}><pre>{entry.text}</pre></div>
-            ))}
-          </div>
-        )}
-
-        {booted && (
-          <div className="terminal-input-area animate-terminal-in">
+          <div className="terminal-input-area">
             <div className="input-line">
               <span className="prompt-symbol">❯</span>
               <input
@@ -252,8 +144,13 @@ const TerminalPanel: React.FC<TerminalPanelProps> = ({ activeSection, setActiveS
                 className="terminal-input"
                 value={typedCmd}
                 onChange={e => setTypedCmd(e.target.value)}
-                onKeyDown={handleKey}
-                placeholder={isTyping ? "AI is typing..." : "Type /help or ask AI..."}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' && !isTyping && typedCmd.trim()) {
+                    handleCommand(typedCmd);
+                    setTypedCmd('');
+                  }
+                }}
+                placeholder={isTyping ? "..." : "Type help..."}
                 autoComplete="off"
                 disabled={isTyping}
               />
@@ -262,27 +159,42 @@ const TerminalPanel: React.FC<TerminalPanelProps> = ({ activeSection, setActiveS
           </div>
         )}
 
-        {booted && (
-          <div className="terminal-contact animate-terminal-in" style={{ animationDelay: '0.2s', marginTop: '1.5rem' }}>
-            <div className="contact-cards">
-              <a href={portfolioData.contact.github} target="_blank" rel="noreferrer" className="contact-card github-card magnetic">
-                <FaGithub className="contact-icon" /><span>GitHub</span>
-              </a>
-              <a href={portfolioData.contact.linkedin} target="_blank" rel="noreferrer" className="contact-card linkedin-card magnetic">
-                <FaLinkedin className="contact-icon" /><span>LinkedIn</span>
-              </a>
-              <button className="contact-card email-card magnetic" onClick={() => {
-                navigator.clipboard.writeText(portfolioData.contact.email);
-                setEmailCopied(true);
-                playClickSound();
-                setTimeout(() => setEmailCopied(false), 2000);
-              }}>
-                {emailCopied ? <MdCheck className="contact-icon" /> : <MdEmail className="contact-icon" />}
-                <span>{emailCopied ? 'Copied!' : 'Copy Email'}</span>
-              </button>
-            </div>
-          </div>
+        {booted && !isTyping && (
+          <motion.div 
+            className="terminal-contact"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5 }}
+          >
+             <div className="contact-cards">
+               <a href={portfolioData.contact.calendly} target="_blank" rel="noreferrer" className="contact-card magnetic" style={{ borderColor: 'var(--accent)', background: 'var(--accent-dim)' }}>
+                 <FaCalendarAlt className="contact-icon" style={{ color: 'var(--accent)' }} />
+                 <span style={{ color: '#fff' }}>Book 15-min Call</span>
+               </a>
+               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                  <a href={portfolioData.contact.github} target="_blank" rel="noreferrer" className="contact-card magnetic">
+                    <FaGithub className="contact-icon" /><span>GitHub</span>
+                  </a>
+                  <a href={portfolioData.contact.linkedin} target="_blank" rel="noreferrer" className="contact-card magnetic">
+                    <FaLinkedin className="contact-icon" /><span>LinkedIn</span>
+                  </a>
+               </div>
+               <button className="contact-card magnetic" onClick={() => {
+                 navigator.clipboard.writeText(portfolioData.contact.email);
+                 setEmailCopied(true);
+                 setTimeout(() => setEmailCopied(false), 2000);
+               }}>
+                 {emailCopied ? <MdCheck className="contact-icon" style={{ color: 'var(--green)' }} /> : <MdEmail className="contact-icon" />}
+                 <span>{emailCopied ? 'Copied Email!' : 'Copy Email'}</span>
+               </button>
+             </div>
+          </motion.div>
         )}
+      </div>
+      
+      <div style={{ padding: '0.5rem 1rem', background: 'rgba(0,0,0,0.2)', borderTop: '1px solid var(--border)', fontSize: '0.6rem', color: 'var(--text-muted)', display: 'flex', justifyContent: 'space-between' }}>
+         <span>System: Node_v20. Neural_Engine: Stable.</span>
+         <span>Press [~] to Focus</span>
       </div>
     </div>
   );
