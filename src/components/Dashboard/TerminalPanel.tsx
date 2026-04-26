@@ -18,9 +18,21 @@ interface TerminalPanelProps {
 }
 
 /* ── Sound Synth Utility ───────────────────── */
+let sharedAudioCtx: AudioContext | null = null;
+const getAudioCtx = () => {
+  if (!sharedAudioCtx) {
+    const CtxClass = window.AudioContext || (window as any).webkitAudioContext;
+    if (CtxClass) sharedAudioCtx = new CtxClass();
+  }
+  return sharedAudioCtx;
+};
+
 const playSound = (freq: number, type: OscillatorType, duration: number, vol = 0.1) => {
   try {
-    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const ctx = getAudioCtx();
+    if (!ctx) return;
+    if (ctx.state === 'suspended') ctx.resume();
+    
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.type = type;
@@ -31,7 +43,7 @@ const playSound = (freq: number, type: OscillatorType, duration: number, vol = 0
     gain.connect(ctx.destination);
     osc.start();
     osc.stop(ctx.currentTime + duration);
-  } catch (e) { /* Audio context not allowed until interaction */ }
+  } catch (e) { /* Silent fail */ }
 };
 
 const playTypingSound = () => playSound(150 + Math.random() * 100, 'sine', 0.05, 0.02);

@@ -1,4 +1,4 @@
-import React, { useRef, useMemo, Component, ReactNode } from 'react';
+import React, { useRef, useMemo, Component, ReactNode, useState, useEffect } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Sphere, Float, MeshDistortMaterial, Points, PointMaterial } from '@react-three/drei';
 import * as THREE from 'three';
@@ -8,18 +8,32 @@ interface EBState { hasError: boolean; }
 class WebGLBoundary extends Component<{ children: ReactNode }, EBState> {
   state: EBState = { hasError: false };
   static getDerivedStateFromError() { return { hasError: true }; }
+  componentDidCatch(error: any) {
+    console.warn("WebGL Scene failed to mount:", error);
+  }
   render() {
-    if (this.state.hasError) return null;
+    if (this.state.hasError) return (
+        <div style={{ position: 'fixed', inset: 0, background: '#05070a', zIndex: 0 }} />
+    );
     return this.props.children;
   }
 }
+
+const isWebGLSupported = () => {
+  try {
+    const canvas = document.createElement('canvas');
+    return !!(window.WebGLRenderingContext && 
+      (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')));
+  } catch (e) {
+    return false;
+  }
+};
 
 const ParticleNetwork = () => {
   const pointsRef = useRef<THREE.Points>(null);
   const { mouse } = useThree();
 
-  // Reduced count for performance
-  const count = 600; 
+  const count = 500; 
   const positions = useMemo(() => {
     const pos = new Float32Array(count * 3);
     for (let i = 0; i < count; i++) {
@@ -33,10 +47,9 @@ const ParticleNetwork = () => {
   useFrame((state) => {
     if (pointsRef.current) {
         const time = state.clock.getElapsedTime();
-        pointsRef.current.rotation.y = time * 0.03;
-        // Faster lerp for snappier response
-        pointsRef.current.rotation.x = THREE.MathUtils.lerp(pointsRef.current.rotation.x, mouse.y * 0.3, 0.15);
-        pointsRef.current.rotation.z = THREE.MathUtils.lerp(pointsRef.current.rotation.z, mouse.x * 0.3, 0.15);
+        pointsRef.current.rotation.y = time * 0.02;
+        pointsRef.current.rotation.x = THREE.MathUtils.lerp(pointsRef.current.rotation.x, mouse.y * 0.2, 0.1);
+        pointsRef.current.rotation.z = THREE.MathUtils.lerp(pointsRef.current.rotation.z, mouse.x * 0.2, 0.1);
     }
   });
 
@@ -49,7 +62,7 @@ const ParticleNetwork = () => {
         sizeAttenuation={true}
         depthWrite={false}
         blending={THREE.AdditiveBlending}
-        opacity={0.4}
+        opacity={0.3}
       />
     </Points>
   );
@@ -59,7 +72,7 @@ const NeuralNodes = () => {
   const groupRef = useRef<THREE.Group>(null);
   const { mouse } = useThree();
 
-  const nodeCount = 10; // Lowered from 15
+  const nodeCount = 8;
   const nodes = useMemo(() => {
     const temp = [];
     for (let i = 0; i < nodeCount; i++) {
@@ -76,43 +89,53 @@ const NeuralNodes = () => {
 
   useFrame(() => {
     if (groupRef.current) {
-        groupRef.current.rotation.y = THREE.MathUtils.lerp(groupRef.current.rotation.y, mouse.x * 0.8, 0.1);
-        groupRef.current.rotation.x = THREE.MathUtils.lerp(groupRef.current.rotation.x, -mouse.y * 0.8, 0.1);
+        groupRef.current.rotation.y = THREE.MathUtils.lerp(groupRef.current.rotation.y, mouse.x * 0.6, 0.08);
+        groupRef.current.rotation.x = THREE.MathUtils.lerp(groupRef.current.rotation.x, -mouse.y * 0.6, 0.08);
     }
   });
 
   return (
     <group ref={groupRef}>
       {nodes.map((node, i) => (
-        <Float key={i} speed={1.5} rotationIntensity={0.2} floatIntensity={0.2}>
+        <Float key={i} speed={1.2} rotationIntensity={0.2} floatIntensity={0.2}>
           <mesh position={node.position}>
-            <sphereGeometry args={[0.07, 12, 12]} />
+            <sphereGeometry args={[0.06, 12, 12]} />
             <meshStandardMaterial color="#3b82f6" emissive="#3b82f6" emissiveIntensity={1} />
           </mesh>
         </Float>
       ))}
-      
-      {/* Visual Connections - Simplified geometry */}
       <primitive object={new THREE.LineSegments(
-        new THREE.EdgesGeometry(new THREE.IcosahedronGeometry(6, 1)), // Lower detail level
-        new THREE.LineBasicMaterial({ color: '#3b82f6', transparent: true, opacity: 0.04 })
+        new THREE.EdgesGeometry(new THREE.IcosahedronGeometry(6, 1)),
+        new THREE.LineBasicMaterial({ color: '#3b82f6', transparent: true, opacity: 0.03 })
       )} />
     </group>
   );
 }
 
 const Background3D: React.FC = () => {
+  const [supported, setSupported] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    setSupported(isWebGLSupported());
+  }, []);
+
+  if (supported === false) {
+    return <div className="background-3d-fixed" style={{ background: '#05070a' }} />;
+  }
+
+  if (supported === null) return null;
+
   return (
     <WebGLBoundary>
       <div className="background-3d-fixed" style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0 }}>
-        {/* Optimized dpr and performance options */}
         <Canvas 
           camera={{ position: [0, 0, 12], fov: 45 }} 
-          dpr={[1, 1.5]} 
+          dpr={1} // Force 1 for stability
           gl={{ 
             antialias: false,
             powerPreference: "high-performance",
-            alpha: true
+            alpha: true,
+            preserveDrawingBuffer: false
           }}
         >
            <ambientLight intensity={0.5} />
@@ -120,16 +143,15 @@ const Background3D: React.FC = () => {
            <ParticleNetwork />
            <NeuralNodes />
            
-           {/* Central Core */}
            <Float speed={1} rotationIntensity={0.5} floatIntensity={0.5}>
-             <Sphere args={[0.8, 32, 32]} position={[0,0,0]}>
+             <Sphere args={[0.7, 32, 32]} position={[0,0,0]}>
                <MeshDistortMaterial
                  color="#3b82f6"
-                 speed={1.5}
-                 distort={0.3}
+                 speed={1}
+                 distort={0.2}
                  radius={1}
                  emissive="#1e40af"
-                 emissiveIntensity={0.3}
+                 emissiveIntensity={0.2}
                />
              </Sphere>
            </Float>
